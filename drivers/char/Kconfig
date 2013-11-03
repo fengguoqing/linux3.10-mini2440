@@ -4,6 +4,14 @@
 
 menu "Character devices"
 
+config MINI2440_ADC
+	bool "ADC driver for FriendlyARM Mini2440 development boards"
+	depends on MACH_MINI2440
+	default y if MACH_MINI2440
+	help
+		this is ADC driver for FriendlyARM Mini2440 development boards 
+		Notes: the touch-screen-driver required this option
+
 source "drivers/tty/Kconfig"
 
 config DEVKMEM
