@@ -2083,6 +2083,12 @@ config FB_S3C2410_DEBUG
 	help
 	  Turn on debugging messages. Note that you can set/unset at run time
 	  through sysfs
+	  
+config BACKLIGHT_MINI2440 
+    tristate "Backlight support for mini2440 from FriendlyARM" 
+	depends on MACH_MINI2440 && FB_S3C2410
+	help 
+		backlight driver for MINI2440 from FriendlyARM
 
 config FB_NUC900
         bool "NUC900 LCD framebuffer support"

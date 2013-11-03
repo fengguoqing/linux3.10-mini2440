@@ -48,7 +48,7 @@
 #include <plat/samsung-time.h>
 
 #include "common.h"
-//#include "common-smdk.h"
+#include <linux/dm9000.h>
 
 static struct map_desc mini2440_iodesc[] __initdata = {
 	/* ISA IO Space map (memory space selected by A24) */
@@ -106,30 +106,39 @@ static struct s3c2410_uartcfg mini2440_uartcfgs[] __initdata = {
 };
 
 /* LCD driver info */
+#define LCD_WIDTH 240 
+#define LCD_HEIGHT 320 
+#define LCD_PIXCLOCK 146250//170000
+#define LCD_RIGHT_MARGIN 25 
+#define LCD_LEFT_MARGIN 0 
+#define LCD_HSYNC_LEN 4 
+#define LCD_UPPER_MARGIN 1 
+#define LCD_LOWER_MARGIN 4 
+#define LCD_VSYNC_LEN 1
+#define LCD_CON5 (S3C2410_LCDCON5_FRM565 | S3C2410_LCDCON5_INVVDEN \
+                    | S3C2410_LCDCON5_INVVFRAME | S3C2410_LCDCON5_INVVLINE \
+                    | S3C2410_LCDCON5_INVVCLK | S3C2410_LCDCON5_HWSWP )
+
 
 static struct s3c2410fb_display mini2440_lcd_cfg __initdata = {
 
-	.lcdcon5	= S3C2410_LCDCON5_FRM565 |
-			  S3C2410_LCDCON5_INVVLINE |
-			  S3C2410_LCDCON5_INVVFRAME |
-			  S3C2410_LCDCON5_PWREN |
-			  S3C2410_LCDCON5_HWSWP,
+	.lcdcon5	= LCD_CON5,
 
 	.type		= S3C2410_LCDCON1_TFT,
 
-	.width		= 240,
-	.height		= 320,
+	.width		= LCD_WIDTH,
+	.height		= LCD_HEIGHT,
 
-	.pixclock	= 166667, /* HCLK 60 MHz, divisor 10 */
-	.xres		= 240,
-	.yres		= 320,
+	.pixclock	= LCD_PIXCLOCK, /* HCLK 60 MHz, divisor 10 */
+	.xres		= LCD_WIDTH,
+	.yres		= LCD_HEIGHT,
 	.bpp		= 16,
-	.left_margin	= 20,
-	.right_margin	= 8,
-	.hsync_len	= 4,
-	.upper_margin	= 8,
-	.lower_margin	= 7,
-	.vsync_len	= 4,
+	.left_margin	= LCD_LEFT_MARGIN + 1,
+	.right_margin	= LCD_RIGHT_MARGIN + 1,
+	.hsync_len	= LCD_HSYNC_LEN + 1,
+	.upper_margin	= LCD_UPPER_MARGIN + 1,
+	.lower_margin	= LCD_LOWER_MARGIN + 1,
+	.vsync_len	= LCD_VSYNC_LEN + 1,
 };
 
 static struct s3c2410fb_mach_info mini2440_fb_info __initdata = {
@@ -137,54 +146,53 @@ static struct s3c2410fb_mach_info mini2440_fb_info __initdata = {
 	.num_displays	= 1,
 	.default_display = 0,
 
-#if 0
 	/* currently setup by downloader */
-	.gpccon		= 0xaa940659,
-	.gpccon_mask	= 0xffffffff,
+	.gpccon		= 0xaa955699,
+	.gpccon_mask	= 0xffc003cc,
 	.gpcup		= 0x0000ffff,
 	.gpcup_mask	= 0xffffffff,
-	.gpdcon		= 0xaa84aaa0,
-	.gpdcon_mask	= 0xffffffff,
+	.gpdcon		= 0xaa95aaa1,
+	.gpdcon_mask	= 0xffc0fff0,
 	.gpdup		= 0x0000faff,
 	.gpdup_mask	= 0xffffffff,
-#endif
 
-	.lpcsel		= ((0xCE6) & ~7) | 1<<4,
+	.lpcsel		= 0xf82,
 };
 
+/* NAND driver info */
 static struct mtd_partition mini2440_default_nand_part[] = {
     [0] = {
-            .name = "supervivi", //这里是 bootloader 所在的分区，可以放置 u-boot, supervivi 等内容，对应/dev/mtdblock0
+            .name = "u-boot", //u-boot map to /dev/mtdblock0
             .size = 0x00040000,
             .offset = 0,
         },
 
     [1] = {
-            .name = "param", //这里是 supervivi 的参数区，其实也属于 bootloader 的一部分，如果 u-boot 比较大，可以把此区域覆盖掉，不会影响系统启动，对应/dev/mtdblock1
+            .name = "param", //u-boot param map to /dev/mtdblock1
             .offset = 0x00040000,
             .size = 0x00020000,
         },
 
     [2] = {
-            .name= "Kernel", //内核所在的分区，大小为 5M，足够放下大部分自己定制的巨型内核了，比如内核使用了更大的 Linux Logo 图片等，对应/dev/mtdblock2
+            .name= "Kernel", // /dev/mtdblock2
             .offset = 0x00060000,
             .size = 0x00500000,
         },
 
     [3] = {
-            .name = "root", //文件系统分区，友善之臂主要用来存放 yaffs2 文件系统内容，对应/dev/mtdblock3
+            .name = "root", // yaffs2 map to /dev/mtdblock3
             .offset = 0x00560000,
             .size = 1024 * 1024 * 1024,
         },
 
     [4] = {
-            .name = "nand", //此区域代表了整片的 nand flash，主要是预留使用，比如以后可以通过应用程序访问读取/dev/mtdblock4 就能实现备份整片 nand flash 了。
+            .name = "nand",
             .offset = 0x00000000,
             .size = 1024 * 1024 * 1024,
         },
 };
 
-//这里是开发板的 nand flash 设置表，因为板子上只有一片，因此也就只有一个表
+
 static struct s3c2410_nand_set mini2440_nand_sets[] = {
     [0] = {
             .name = "NAND",
@@ -194,7 +202,7 @@ static struct s3c2410_nand_set mini2440_nand_sets[] = {
         },
 };
 
-//这里是 nand flash 本身的一些特性，一般需要对照 datasheet 填写，大部分情况下按照以下参数填写即可
+
 static struct s3c2410_platform_nand mini2440_nand_info = {
     .tacls = 20,
     .twrph0 = 60,
@@ -204,12 +212,53 @@ static struct s3c2410_platform_nand mini2440_nand_info = {
     .ignore_unset_ecc = 1,
 };
 
+/* DM9000AEP 10/100 ethernet controller */ 
+#define MACH_MINI2440_DM9K_BASE (S3C2410_CS4 + 0x300)
+
+static struct resource mini2440_dm9k_resource[] = { 
+    [0] = { 
+        .start = MACH_MINI2440_DM9K_BASE,
+        .end = MACH_MINI2440_DM9K_BASE + 3,
+        .flags = IORESOURCE_MEM 
+    }, 
+    [1] = {
+        .start = MACH_MINI2440_DM9K_BASE + 4,
+        .end = MACH_MINI2440_DM9K_BASE + 7,
+        .flags = IORESOURCE_MEM
+    }, 
+    [2] = {
+        .start = IRQ_EINT7,
+        .end = IRQ_EINT7,
+        .flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
+    } 
+};
+
+/* 
+* * * The DM9000 has no eeprom, and it's MAC address is set by 
+* * * the bootloader before starting the kernel. 
+* * */ 
+static struct dm9000_plat_data mini2440_dm9k_pdata = { 
+    .flags = (DM9000_PLATF_16BITONLY | DM9000_PLATF_NO_EEPROM), 
+}; 
+
+static struct platform_device mini2440_device_eth = { 
+    .name = "dm9000", 
+    .id = -1, 
+    .num_resources  = ARRAY_SIZE(mini2440_dm9k_resource), 
+    .resource = mini2440_dm9k_resource, 
+    .dev = { 
+        .platform_data = &mini2440_dm9k_pdata, 
+    }, 
+}; 
+
 static struct platform_device *mini2440_devices[] __initdata = {
 	&s3c_device_ohci,
 	&s3c_device_lcd,
+	&s3c_device_rtc,
 	&s3c_device_wdt,
 	&s3c_device_i2c0,
 	&s3c_device_iis,
+	&mini2440_device_eth,
     &s3c_device_nand,
 };
 
