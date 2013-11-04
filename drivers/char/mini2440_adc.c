@@ -48,7 +48,7 @@ typedef struct {
     int prescale; 
 }ADC_DEV; 
 
-DECLARE_MUTEX(ADC_LOCK); 
+DEFINE_SEMAPHORE(ADC_LOCK); 
 static int OwnADC = 0; 
 static ADC_DEV adcdev; 
 static volatile int ev_adc = 0; 
@@ -75,8 +75,8 @@ static struct clk  *adc_clock;
 #define ADC_START (1 << 0)
 #define ADC_ENDCVT (1 << 15)
 
-#define START_ADC_AIN(ch, prescale) \ 
-do{ \ 
+#define START_ADC_AIN(ch, prescale) \
+do{ \
     ADCCON = PRESCALE_EN | PRSCVL(prescale) | ADC_INPUT((ch)) ; \
     ADCCON |= ADC_START; \
 }while(0)
@@ -103,7 +103,7 @@ static ssize_t s3c2410_adc_read(struct file *filp, char *buffer, size_t count, l
         ev_adc = 0; 
         DPRINTK("AIN[%d] = 0x%04x, %d\n", adcdev.channel, adc_data, ADCCON & 0x80 ? 1:0); 
 
-        value = adc_
+        value = adc_data;
         OwnADC = 0; 
         up(&ADC_LOCK); 
     } else { 
