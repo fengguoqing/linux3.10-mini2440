@@ -11,6 +11,13 @@ config MINI2440_ADC
 	help
 		this is ADC driver for FriendlyARM Mini2440 development boards 
 		Notes: the touch-screen-driver required this option
+config LEDS_MINI2440 
+    tristate "LED Support for Mini2440 GPIO LEDs" 
+    depends on MACH_MINI2440 
+    default y if MACH_MINI2440
+    help 
+        This option enables support for LEDs connected to GPIO lines 
+        on Mini2440 boards. 
 
 source "drivers/tty/Kconfig"
 
