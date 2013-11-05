@@ -50,6 +50,11 @@
 #include "common.h"
 #include <linux/dm9000.h>
 
+#include <linux/gpio.h>
+#include <linux/mmc/host.h>
+#include <linux/platform_data/mmc-s3cmci.h>
+
+
 static struct map_desc mini2440_iodesc[] __initdata = {
 	/* ISA IO Space map (memory space selected by A24) */
 
@@ -251,6 +256,16 @@ static struct platform_device mini2440_device_eth = {
     }, 
 }; 
 
+/* MMC/SD */ 
+static struct s3c24xx_mci_pdata mini2440_mmc_cfg = { 
+    .gpio_detect = S3C2410_GPG(8), 
+    .gpio_wprotect = S3C2410_GPH(8), 
+    .set_power = NULL, 
+    .ocr_avail = MMC_VDD_32_33|MMC_VDD_33_34,
+}; 
+
+
+
 static struct platform_device *mini2440_devices[] __initdata = {
 	&s3c_device_ohci,
 	&s3c_device_lcd,
@@ -259,6 +274,7 @@ static struct platform_device *mini2440_devices[] __initdata = {
 	&s3c_device_i2c0,
 	&s3c_device_iis,
 	&mini2440_device_eth,
+	&s3c_device_sdi,
     &s3c_device_nand,
 };
 
@@ -274,6 +290,7 @@ static void __init mini2440_machine_init(void)
 {
 	s3c24xx_fb_set_platdata(&mini2440_fb_info);
     s3c_nand_set_platdata(&mini2440_nand_info);
+    s3c24xx_mci_set_platdata(&mini2440_mmc_cfg);
 	s3c_i2c0_set_platdata(NULL);
 
 	platform_add_devices(mini2440_devices, ARRAY_SIZE(mini2440_devices));
