@@ -54,6 +54,9 @@
 #include <linux/mmc/host.h>
 #include <linux/platform_data/mmc-s3cmci.h>
 
+#include <sound/s3c24xx_uda134x.h>
+
+
 
 static struct map_desc mini2440_iodesc[] __initdata = {
 	/* ISA IO Space map (memory space selected by A24) */
@@ -235,26 +238,26 @@ static struct resource mini2440_dm9k_resource[] = {
         .start = IRQ_EINT7,
         .end = IRQ_EINT7,
         .flags = IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
-    } 
+    }
 };
 
 /* 
 * * * The DM9000 has no eeprom, and it's MAC address is set by 
 * * * the bootloader before starting the kernel. 
 * * */ 
-static struct dm9000_plat_data mini2440_dm9k_pdata = { 
-    .flags = (DM9000_PLATF_16BITONLY | DM9000_PLATF_NO_EEPROM), 
-}; 
+static struct dm9000_plat_data mini2440_dm9k_pdata = {
+    .flags = (DM9000_PLATF_16BITONLY | DM9000_PLATF_NO_EEPROM),
+};
 
-static struct platform_device mini2440_device_eth = { 
-    .name = "dm9000", 
-    .id = -1, 
-    .num_resources  = ARRAY_SIZE(mini2440_dm9k_resource), 
-    .resource = mini2440_dm9k_resource, 
-    .dev = { 
-        .platform_data = &mini2440_dm9k_pdata, 
-    }, 
-}; 
+static struct platform_device mini2440_device_eth = {
+    .name = "dm9000",
+    .id = -1,
+    .num_resources  = ARRAY_SIZE(mini2440_dm9k_resource),
+    .resource = mini2440_dm9k_resource,
+    .dev = {
+        .platform_data = &mini2440_dm9k_pdata,
+    },
+};
 
 /* MMC/SD */ 
 static struct s3c24xx_mci_pdata mini2440_mmc_cfg = { 
@@ -263,6 +266,21 @@ static struct s3c24xx_mci_pdata mini2440_mmc_cfg = {
     .set_power = NULL, 
     .ocr_avail = MMC_VDD_32_33|MMC_VDD_33_34,
 }; 
+
+/* sound/UDA134x */
+static struct s3c24xx_uda134x_platform_data s3c24xx_uda134x_data = { 
+    .l3_clk = S3C2410_GPB(4),
+    .l3_data = S3C2410_GPB(3),
+    .l3_mode = S3C2410_GPB(2),
+    .model = UDA134X_UDA1341,
+};
+
+static struct platform_device s3c24xx_uda134x = { 
+    .name = "s3c24xx_uda134x",
+    .dev = {
+        .platform_data = &s3c24xx_uda134x_data,
+    }
+};
 
 
 
@@ -275,6 +293,7 @@ static struct platform_device *mini2440_devices[] __initdata = {
 	&s3c_device_iis,
 	&mini2440_device_eth,
 	&s3c_device_sdi,
+	&s3c24xx_uda134x,
     &s3c_device_nand,
 };
 
